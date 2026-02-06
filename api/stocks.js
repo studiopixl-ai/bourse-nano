@@ -19,14 +19,9 @@ export default async function handler(req, res) {
 
     await Promise.all(uniqueSymbols.map(async (symbol) => {
       try {
-        // Pour les perfs historiques, on a besoin du chart
         const responseChart = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2y`, {
           headers: { "User-Agent": "Mozilla/5.0" }
         });
-        
-        // Pour le Jour, on prend le Quote (plus fiable pour le % jour)
-        // Mais comme l'endpoint Quote est parfois bloqué, on va essayer d'extraire la donnée fiable du chart META
-        // Si le chart donne un prevClose délirant, on le verra.
         
         if (!responseChart.ok) throw new Error("Fetch failed");
         const json = await responseChart.json();
@@ -44,11 +39,20 @@ export default async function handler(req, res) {
         
         const currentPrice = meta.regularMarketPrice;
         
-        // CORRECTION : On utilise le prevClose META s'il semble cohérent, sinon on prend le dernier point historique
-        let prevClose = meta.chartPreviousClose;
-        if (!prevClose || prevClose < 1) prevClose = cleanHistory[cleanHistory.length - 2]?.price || currentPrice;
+        // FORCE CALCULATION : On ignore meta.chartPreviousClose qui est buggé pour OCS
+        // On prend le dernier point de l'historique (qui est la clôture d'hier) 
+        // ou l'avant-dernier si le dernier est égal au prix actuel (marché fermé)
+        
+        let lastClose = currentPrice;
+        if (cleanHistory.length >= 2) {
+             // Si le dernier point historique est très proche du prix actuel (marché fermé/en cours),
+             // on compare avec celui d'avant (J-1).
+             // Mais attention, si le marché est fermé, le dernier point EST la clôture.
+             // Donc pour avoir la variation, il faut comparer avec J-1.
+             lastClose = cleanHistory[cleanHistory.length - 2].price;
+        }
 
-        const dayChange = ((currentPrice - prevClose) / prevClose) * 100;
+        const dayChange = ((currentPrice - lastClose) / lastClose) * 100;
 
         const getPerf = (daysBack) => {
             if (cleanHistory.length <= daysBack) return 0;
@@ -92,11 +96,10 @@ export default async function handler(req, res) {
 
       const totalValue = marketData.priceInEur * item.quantity;
       let gain = 0;
-      let gainPercent = 0;
-      if (item.pru > 0) {
-        gain = (marketData.priceInEur - item.pru) * item.quantity;
-        gainPercent = ((marketData.priceInEur - item.pru) / item.pru) * 100;
-      }
+      if (item.pru > 0) gain = (marketData.priceInEur - item.pru) * item.quantity;
+
+      // Calcul % gain global (latent)
+      const gainPercent = item.pru > 0 ? ((marketData.priceInEur - item.pru) / item.pru) * 100 : 0;
 
       return { ...item, ...marketData, totalValue, gain, gainPercent };
     });
