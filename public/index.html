@@ -53,6 +53,13 @@
         <div class="total-val" id="total-val">---</div>
         <div class="perf-global" id="perf-global">---</div>
         <div class="invested" id="invested-txt">---</div>
+        
+        <!-- Graphique Historique (Uniquement visible en GLOBAL) -->
+        <div id="history-chart-container" style="display:none; margin-top:15px; border-top:1px solid #30363d; padding-top:10px;">
+            <div style="font-size:0.7rem; color:#8b949e; margin-bottom:5px;">Historique (30j)</div>
+            <svg id="history-chart" viewBox="0 0 300 60" style="width:100%; height:60px; overflow:visible;"></svg>
+        </div>
+
         <div class="edit-invest" onclick="editInvest()">⚙️</div>
         <div style="font-size:0.7rem; color:#444; margin-top:5px; display:flex; justify-content:center; align-items:center; gap:8px;">
             <span>EUR/USD : <span id="forex-rate">-</span></span>
@@ -110,12 +117,73 @@
             const btn = document.querySelector('button[onclick="load()"]');
             if(btn) btn.innerHTML = '⏳';
             try {
-                const res = await fetch('/api/stocks?t=' + Date.now());
-                globalData = await res.json();
+                // Chargement parallèle Stocks + Historique
+                const [resStocks, resHist] = await Promise.all([
+                    fetch('/api/stocks?t=' + Date.now()),
+                    fetch('/api/history?t=' + Date.now())
+                ]);
+                
+                globalData = await resStocks.json();
+                const historyData = await resHist.json(); // Array of {date, value, invested}
+                
                 render();
+                renderHistoryChart(historyData);
             } catch (e) { document.getElementById('list').innerHTML = 'Erreur'; }
             finally { if(btn) btn.innerHTML = '🔄'; }
         }
+
+        function renderHistoryChart(history) {
+            const container = document.getElementById('history-chart-container');
+            if (currentTab !== 'GLOBAL' || !history || history.length < 2) {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'block';
+
+            // Trier par date
+            history.sort((a,b) => new Date(a.date) - new Date(b.date));
+            // Prendre les 30 derniers points
+            const data = history.slice(-30);
+            
+            const svg = document.getElementById('history-chart');
+            svg.innerHTML = '';
+            
+            const vals = data.map(d => d.value);
+            const min = Math.min(...vals) * 0.95; // Marge bas
+            const max = Math.max(...vals) * 1.05; // Marge haut
+            const range = max - min || 1;
+            const w = 300, h = 60;
+            const step = w / (data.length - 1);
+            
+            // Ligne Investi (Pointillés gris)
+            // On prend la dernière valeur investie comme référence ou on trace la courbe si elle varie
+            const investPath = data.map((d, i) => {
+                const y = h - ((d.invested - min) / range * h);
+                return `${i===0?'M':'L'} ${i*step} ${y}`;
+            }).join(' ');
+            
+            // Ligne Valorisation (Vert/Rouge selon tendance ou position vs invest)
+            const valPath = data.map((d, i) => {
+                const y = h - ((d.value - min) / range * h);
+                return `${i===0?'M':'L'} ${i*step} ${y}`;
+            }).join(' ');
+
+            // Dessin SVG
+            // Zone Investi
+            svg.innerHTML += `<path d="${investPath}" stroke="#444" stroke-width="1" stroke-dasharray="4" fill="none" />`;
+            // Zone Valeur
+            const color = vals[vals.length-1] >= data[data.length-1].invested ? 'var(--green)' : 'var(--red)';
+            svg.innerHTML += `<path d="${valPath}" stroke="${color}" stroke-width="2" fill="none" />`;
+            
+            // Petit point final
+            const lastY = h - ((vals[vals.length-1] - min) / range * h);
+            svg.innerHTML += `<circle cx="${w}" cy="${lastY}" r="3" fill="${color}" />`;
+            
+            // Date début/fin
+            // svg.innerHTML += `<text x="0" y="${h+12}" fill="#666" font-size="8">${data[0].date.split('-').slice(1).join('/')}</text>`;
+            // svg.innerHTML += `<text x="${w}" y="${h+12}" fill="#666" font-size="8" text-anchor="end">${data[data.length-1].date.split('-').slice(1).join('/')}</text>`;
+        }
+
 
         function setTab(tab) {
             currentTab = tab;
