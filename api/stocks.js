@@ -2,25 +2,21 @@ export default async function handler(req, res) {
   const symbols = ['OCS', 'MEDCL.PA', 'ALCOX.PA', 'ALCJ.PA'];
 
   try {
-    // On utilise l'API publique Yahoo Query (v7) directement
     const promises = symbols.map(async (symbol) => {
       try {
-        const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`);
+        // On utilise l'endpoint 'quote' qui donne le % par rapport à la clôture veille
+        const response = await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`);
         if (!response.ok) throw new Error("Fetch failed");
         
         const json = await response.json();
-        const result = json.chart.result[0];
-        const meta = result.meta;
-        const price = meta.regularMarketPrice;
-        const prevClose = meta.chartPreviousClose;
-        const change = ((price - prevClose) / prevClose) * 100;
+        const result = json.quoteResponse.result[0];
 
         return {
           symbol: symbol,
-          name: meta.shortName || meta.symbol,
-          price: price,
-          change: change,
-          currency: meta.currency
+          name: result.shortName || result.longName || symbol,
+          price: result.regularMarketPrice,
+          change: result.regularMarketChangePercent, // C'est le % "Day Change" officiel
+          currency: result.currency
         };
       } catch (err) {
         console.error(`Error fetching ${symbol}:`, err);
