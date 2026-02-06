@@ -113,7 +113,10 @@
                 const res = await fetch('/api/stocks?t=' + Date.now());
                 globalData = await res.json();
                 render();
-            } catch (e) { document.getElementById('list').innerHTML = 'Erreur'; }
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('list').innerHTML = 'Erreur: ' + e.message; 
+            }
             finally { if(btn) btn.innerHTML = '🔄'; }
         }
 
