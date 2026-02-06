@@ -203,7 +203,10 @@
                 const html = `
                     <div class="card" ${clickAttr} style="${styleAttr}">
                         <div class="info">
-                            <span class="symbol">${s.symbol.replace('.PA','')}</span>
+                            <span class="symbol">
+                                ${s.symbol.replace('.PA','')}
+                                <a href="https://www.boursorama.com/recherche/text/${s.symbol.replace('.PA','')}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none; font-size:0.8rem; margin-left:4px;">↗️</a>
+                            </span>
                             <span class="name">${s.name.substring(0,12)}..</span>
                             <span class="details">${s.quantity} x ${s.pru.toFixed(3)} €</span>
                         </div>
