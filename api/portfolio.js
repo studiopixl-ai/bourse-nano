@@ -3,32 +3,32 @@ import { Redis } from '@upstash/redis';
 const redis = Redis.fromEnv();
 
 export default async function handler(req, res) {
-  // Clé unique pour stocker ton portefeuille
   const KEY = 'nano_portfolio';
 
   if (req.method === 'GET') {
-    // Récupérer le portefeuille
     const portfolio = await redis.get(KEY) || [];
     return res.status(200).json(portfolio);
   }
 
   if (req.method === 'POST') {
-    // Ajouter / Modifier
-    const { symbol, quantity, password } = req.body;
+    // Ajouter / Modifier (Avec PRU maintenant)
+    const { symbol, quantity, pru, password } = req.body;
     
-    // Sécurité basique
-    if (password !== 'nano123') {
-      return res.status(401).json({ error: 'Mot de passe incorrect' });
-    }
+    if (password !== 'nano123') return res.status(401).json({ error: 'Mot de passe incorrect' });
 
     let portfolio = await redis.get(KEY) || [];
     
-    // Vérifier si existe déjà
     const index = portfolio.findIndex(p => p.symbol === symbol);
+    const newItem = { 
+      symbol, 
+      quantity: Number(quantity),
+      pru: Number(pru) || 0 // Nouveau champ
+    };
+
     if (index >= 0) {
-      portfolio[index].quantity = Number(quantity); // Mise à jour
+      portfolio[index] = newItem;
     } else {
-      portfolio.push({ symbol, quantity: Number(quantity) }); // Ajout
+      portfolio.push(newItem);
     }
 
     await redis.set(KEY, portfolio);

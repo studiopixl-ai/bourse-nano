@@ -1,22 +1,12 @@
-import { Redis } from '@upstash/redis';
-
-const redis = Redis.fromEnv();
-
 export default async function handler(req, res) {
-  try {
-    // 1. Récupérer la liste depuis Redis
-    const portfolio = await redis.get('nano_portfolio');
-    
-    // Si vide ou pas encore créé, on met une liste par défaut pour commencer
-    const symbolsData = portfolio || [
-      { symbol: 'OCS', quantity: 0 },
-      { symbol: 'MEDCL.PA', quantity: 0 },
-      { symbol: 'ALCOX.PA', quantity: 0 },
-      { symbol: 'ALCJ.PA', quantity: 0 }
-    ];
+  // On importe Redis aussi ici pour lire le PRU
+  const { Redis } = await import('@upstash/redis');
+  const redis = Redis.fromEnv();
 
-    // 2. Chercher les prix
-    const promises = symbolsData.map(async (item) => {
+  try {
+    const portfolio = await redis.get('nano_portfolio') || [];
+
+    const promises = portfolio.map(async (item) => {
       try {
         const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${item.symbol}?interval=1d&range=5d`, {
           headers: { "User-Agent": "Mozilla/5.0" }
@@ -32,23 +22,34 @@ export default async function handler(req, res) {
         const prevClose = meta.chartPreviousClose;
         const change = ((price - prevClose) / prevClose) * 100;
 
+        // Calculs Financiers
+        const totalValue = price * item.quantity;
+        let gain = 0;
+        let gainPercent = 0;
+
+        if (item.pru > 0) {
+          gain = (price - item.pru) * item.quantity;
+          gainPercent = ((price - item.pru) / item.pru) * 100;
+        }
+
         return {
           symbol: item.symbol,
           quantity: item.quantity,
+          pru: item.pru, // On renvoie le PRU
           name: meta.shortName || meta.symbol,
           price: price,
-          change: change,
+          dayChange: change,
           currency: meta.currency,
-          value: price * item.quantity // Valorisation
+          totalValue: totalValue,
+          gain: gain,
+          gainPercent: gainPercent
         };
       } catch (err) {
-        console.error(`Error fetching ${item.symbol}:`, err);
         return { symbol: item.symbol, error: "Indisponible", quantity: item.quantity };
       }
     });
 
     const results = await Promise.all(promises);
-    
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
     res.status(200).json(results);
   } catch (error) {

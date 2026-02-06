@@ -3,134 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Portfolio Nano 🚀</title>
+    <title>Portfolio Nano V3</title>
     <style>
         :root {
-            --bg: #0d1117;
-            --card: #161b22;
-            --text: #c9d1d9;
-            --accent: #58a6ff;
-            --border: #30363d;
-            --green: #3fb950;
-            --red: #f85149;
+            --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --accent: #58a6ff;
+            --border: #30363d; --green: #3fb950; --red: #f85149;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 16px;
-            padding-bottom: 80px;
+            font-family: -apple-system, sans-serif; background-color: var(--bg);
+            color: var(--text); margin: 0; padding: 16px; padding-bottom: 80px;
         }
-        h1 { margin: 0 0 20px 0; font-size: 1.6rem; display: flex; justify-content: space-between; align-items: center; }
         .total-block {
             background: linear-gradient(135deg, #1f2937, #0d1117);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 24px;
-            text-align: center;
+            border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+            margin-bottom: 24px; text-align: center;
         }
-        .total-val { font-size: 2.2rem; font-weight: 800; color: #fff; margin: 5px 0; }
-        .total-label { font-size: 0.9rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
+        .total-val { font-size: 2.2rem; font-weight: 800; color: #fff; }
+        .total-gain { font-size: 1rem; font-weight: 600; margin-top: 5px; }
 
         .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px;
-            position: relative;
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 16px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr auto;
+            gap: 8px; position: relative;
         }
-        .info { display: flex; flex-direction: column; }
         .symbol { font-weight: bold; font-size: 1.1rem; color: var(--accent); }
         .name { font-size: 0.8rem; color: #8b949e; }
-        .qty { font-size: 0.8rem; color: #8b949e; margin-top: 4px; }
+        .details { font-size: 0.8rem; color: #8b949e; margin-top: 4px; }
         
         .price-block { text-align: right; }
         .price { font-size: 1.2rem; font-weight: bold; color: #f0f6fc; }
-        .change { font-size: 0.85rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; }
-        .val-latent { font-size: 0.85rem; color: #8b949e; margin-top: 4px; }
+        .day-change { font-size: 0.75rem; color: #8b949e; }
+        .gain-val { font-size: 0.9rem; font-weight: 600; margin-top: 4px; }
         
-        .up { color: var(--green); background: rgba(63, 185, 80, 0.15); }
-        .down { color: var(--red); background: rgba(248, 81, 73, 0.15); }
+        .up { color: var(--green); }
+        .down { color: var(--red); }
+        .bg-up { background: rgba(63, 185, 80, 0.15); color: var(--green); padding: 2px 6px; border-radius: 4px;}
+        .bg-down { background: rgba(248, 81, 73, 0.15); color: var(--red); padding: 2px 6px; border-radius: 4px;}
 
         .btn-add {
             position: fixed; bottom: 20px; right: 20px;
             width: 56px; height: 56px; border-radius: 50%;
             background: var(--accent); color: white; border: none;
             font-size: 2rem; box-shadow: 0 4px 12px rgba(88, 166, 255, 0.4);
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
         }
-
-        /* Modal */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; w: 100%; h: 100%;
-            width: 100%; height: 100%; background: rgba(0,0,0,0.8);
-            justify-content: center; align-items: center; z-index: 100;
-        }
-        .modal-content {
-            background: var(--card); padding: 24px; border-radius: 12px; width: 85%; max-width: 320px;
-            border: 1px solid var(--border);
-        }
-        input {
-            width: 100%; padding: 12px; margin: 8px 0;
-            background: #0d1117; border: 1px solid var(--border);
-            color: white; border-radius: 8px; box-sizing: border-box;
-        }
+        /* Modal Styles */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: var(--card); padding: 24px; border-radius: 12px; width: 85%; max-width: 320px; border: 1px solid var(--border); }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #0d1117; border: 1px solid var(--border); color: white; border-radius: 8px; box-sizing: border-box; }
         .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
         button { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
-        .btn-cancel { background: transparent; color: #8b949e; }
         .btn-save { background: var(--accent); color: white; }
-        .btn-delete { background: rgba(248, 81, 73, 0.15); color: var(--red); font-size: 0.8rem; padding: 4px 8px; position: absolute; top: 10px; right: 10px; display: none; }
-        
-        .editing .btn-delete { display: block; }
-        .loader { text-align: center; margin-top: 40px; color: #8b949e; }
     </style>
 </head>
 <body>
-    <h1>Portfolio <span style="font-size:0.8em; opacity:0.5" id="last-update"></span></h1>
-
     <div class="total-block">
-        <div class="total-label">Valorisation Totale</div>
-        <div class="total-val" id="total-val">--- €</div>
+        <div style="color:#8b949e; font-size:0.8rem">VALORISATION</div>
+        <div class="total-val" id="total-val">---</div>
+        <div class="total-gain" id="total-gain">---</div>
     </div>
 
-    <div id="list">
-        <div class="loader">Chargement...</div>
-    </div>
-
+    <div id="list">Chargement...</div>
     <button class="btn-add" onclick="openModal()">+</button>
 
-    <!-- Modal Ajout -->
     <div id="modal" class="modal">
         <div class="modal-content">
-            <h3 style="margin-top:0">Ajouter / Modifier</h3>
-            <input type="text" id="symbol" placeholder="Symbole (ex: OCS, AI.PA)" />
-            <input type="number" id="qty" placeholder="Quantité (ex: 540)" />
+            <h3 style="margin-top:0">Position</h3>
+            <input type="text" id="symbol" placeholder="Symbole (ex: MEDCL.PA)" />
+            <input type="number" id="qty" placeholder="Quantité" />
+            <input type="number" id="pru" placeholder="PRU (Prix d'achat moyen)" step="0.01" />
             <input type="password" id="pwd" placeholder="Mot de passe (nano123)" />
             <div class="actions">
-                <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+                <button onclick="closeModal()" style="background:transparent;color:#8b949e">Annuler</button>
                 <button class="btn-save" onclick="saveStock()">Enregistrer</button>
             </div>
             <div style="margin-top:15px; border-top:1px solid #333; padding-top:10px; text-align:center;">
-                <button class="btn-cancel" style="color:var(--red); font-size:0.8rem" onclick="deleteStock()">Supprimer ce titre</button>
+                <button onclick="deleteStock()" style="background:transparent;color:var(--red);font-size:0.8rem">Supprimer</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Charger les données
         async function load() {
             try {
                 const res = await fetch('/api/stocks');
                 const data = await res.json();
                 render(data);
             } catch (e) {
-                document.getElementById('list').innerHTML = '<p style="text-align:center;color:red">Erreur chargement</p>';
+                document.getElementById('list').innerHTML = 'Erreur';
             }
         }
 
@@ -138,115 +98,94 @@
             const list = document.getElementById('list');
             list.innerHTML = '';
             let totalEur = 0;
+            let totalGainEur = 0;
 
             stocks.forEach(s => {
                 if (s.error) return;
                 
-                // Conversion approximative USD->EUR pour le total (si USD)
-                // Ici on simplifie : on additionne tout en "unités" ou on convertit si besoin.
-                // Pour faire simple : on affiche le total en "Devise Mixte" ou on convertit tout en EUR si on avait le taux.
-                // Ici je vais additionner la valeur brute, mais attention aux devises mélangées.
-                // Amélioration : on pourrait fetcher EURUSD=X.
+                // Conversion USD (fixe 0.96 pour l'instant)
+                const rate = s.currency === 'USD' ? 0.96 : 1;
+                const valEur = s.totalValue * rate;
+                const gainEur = s.gain * rate;
                 
-                let val = s.value || 0;
-                // Si USD, on convertit (taux fixe pour l'instant ou approximatif 0.96)
-                if (s.currency === 'USD') val = val * 0.96; 
-                totalEur += val;
+                totalEur += valEur;
+                totalGainEur += gainEur;
 
-                const isUp = s.change >= 0;
+                const isUp = s.gain >= 0;
                 const currency = s.currency === 'USD' ? '$' : '€';
                 
                 const html = `
-                    <div class="card" onclick="edit('${s.symbol}', ${s.quantity})">
+                    <div class="card" onclick="edit('${s.symbol}', ${s.quantity}, ${s.pru})">
                         <div class="info">
-                            <span class="symbol">${s.symbol}</span>
-                            <span class="name">${s.name}</span>
-                            <span class="qty">${s.quantity} titres</span>
+                            <span class="symbol">${s.symbol.replace('.PA','')}</span>
+                            <span class="name">${s.name.substring(0,15)}..</span>
+                            <span class="details">${s.quantity} x ${s.pru} ${currency} (PRU)</span>
                         </div>
                         <div class="price-block">
                             <div class="price">${s.price.toFixed(2)} ${currency}</div>
-                            <span class="change ${isUp ? 'up' : 'down'}">
-                                ${isUp ? '+' : ''}${s.change.toFixed(2)}%
+                            <span class="day-change ${s.dayChange>=0?'up':'down'}">
+                                ${s.dayChange>=0?'+':''}${s.dayChange.toFixed(2)}% (j)
                             </span>
-                            <div class="val-latent">${(s.price * s.quantity).toFixed(0)} ${currency}</div>
+                            <div class="gain-val ${isUp?'bg-up':'bg-down'}">
+                                ${isUp?'+':''}${s.gain.toFixed(0)} ${currency} (${s.gainPercent.toFixed(1)}%)
+                            </div>
                         </div>
                     </div>
                 `;
                 list.innerHTML += html;
             });
 
-            document.getElementById('total-val').innerText = totalEur.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+            document.getElementById('total-val').innerText = totalEur.toLocaleString('fr-FR', {style:'currency', currency:'EUR', maximumFractionDigits:0});
             
-            const now = new Date();
-            document.getElementById('last-update').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const isTotalUp = totalGainEur >= 0;
+            document.getElementById('total-gain').innerHTML = `
+                <span class="${isTotalUp?'bg-up':'bg-down'}">
+                    ${isTotalUp?'+':''}${totalGainEur.toFixed(0)} €
+                </span>
+            `;
         }
 
-        // Gestion Modal
         const modal = document.getElementById('modal');
         const inpSymbol = document.getElementById('symbol');
         const inpQty = document.getElementById('qty');
+        const inpPru = document.getElementById('pru');
         const inpPwd = document.getElementById('pwd');
 
         function openModal() {
-            inpSymbol.value = '';
-            inpQty.value = '';
-            modal.style.display = 'flex';
-            inpSymbol.focus();
-        }
-
-        function edit(symbol, qty) {
-            inpSymbol.value = symbol;
-            inpQty.value = qty;
+            inpSymbol.value = ''; inpQty.value = ''; inpPru.value = '';
             modal.style.display = 'flex';
         }
-
-        function closeModal() {
-            modal.style.display = 'none';
+        function edit(s, q, p) {
+            inpSymbol.value = s; inpQty.value = q; inpPru.value = p;
+            modal.style.display = 'flex';
         }
+        function closeModal() { modal.style.display = 'none'; }
 
         async function saveStock() {
-            const symbol = inpSymbol.value.toUpperCase();
-            const quantity = inpQty.value;
-            const password = inpPwd.value;
-
-            if (!symbol || !password) return alert("Remplissez tout !");
-
             const res = await fetch('/api/portfolio', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ symbol, quantity, password })
+                body: JSON.stringify({
+                    symbol: inpSymbol.value.toUpperCase(),
+                    quantity: inpQty.value,
+                    pru: inpPru.value,
+                    password: inpPwd.value
+                })
             });
-
-            if (res.ok) {
-                closeModal();
-                load(); // Recharger
-            } else {
-                alert("Erreur (Mot de passe ?)");
-            }
+            if(res.ok) { closeModal(); load(); } else alert("Erreur");
         }
-
+        
         async function deleteStock() {
             if(!confirm("Supprimer ?")) return;
-            const symbol = inpSymbol.value;
-            const password = inpPwd.value;
-            
             const res = await fetch('/api/portfolio', {
                 method: 'DELETE',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ symbol, password })
+                body: JSON.stringify({ symbol: inpSymbol.value, password: inpPwd.value })
             });
-            
-            if (res.ok) {
-                closeModal();
-                load();
-            } else {
-                alert("Erreur");
-            }
+            if(res.ok) { closeModal(); load(); }
         }
 
-        // Auto load
         load();
-        setInterval(load, 60000);
     </script>
 </body>
 </html>
