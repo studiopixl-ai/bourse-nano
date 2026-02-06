@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bourse Nano 📈</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { margin-bottom: 20px; font-size: 1.5rem; }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .info { display: flex; flex-direction: column; }
+        .symbol { font-weight: bold; font-size: 1.1rem; color: #58a6ff; }
+        .name { font-size: 0.85rem; color: #8b949e; }
+        .price-block { text-align: right; }
+        .price { font-size: 1.4rem; font-weight: bold; color: #f0f6fc; }
+        .change { font-size: 0.9rem; font-weight: 500; padding: 2px 6px; border-radius: 4px; }
+        .up { color: #3fb950; background: rgba(63, 185, 80, 0.1); }
+        .down { color: #f85149; background: rgba(248, 81, 73, 0.1); }
+        .loader { border: 3px solid #30363d; border-top: 3px solid #58a6ff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin-top: 20px;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .last-update { margin-top: 20px; font-size: 0.8rem; color: #484f58; }
+    </style>
+</head>
+<body>
+    <h1>Portefeuille Nano</h1>
+    <div id="container">
+        <div class="loader"></div>
+    </div>
+    <div class="last-update" id="time"></div>
+
+    <script>
+        async function fetchStocks() {
+            const container = document.getElementById('container');
+            const timeDiv = document.getElementById('time');
+            
+            try {
+                const response = await fetch('/api/stocks');
+                const data = await response.json();
+                
+                container.innerHTML = ''; // Clear loader
+                
+                data.forEach(stock => {
+                    if (stock.error) return;
+
+                    const isUp = stock.change >= 0;
+                    const sign = isUp ? '+' : '';
+                    const currency = stock.currency === 'USD' ? '$' : '€';
+                    
+                    const html = `
+                        <div class="card">
+                            <div class="info">
+                                <span class="symbol">${stock.symbol.replace('.PA', '')}</span>
+                                <span class="name">${stock.name.substring(0, 20)}...</span>
+                            </div>
+                            <div class="price-block">
+                                <div class="price">${stock.price.toFixed(2)} ${currency}</div>
+                                <span class="change ${isUp ? 'up' : 'down'}">
+                                    ${sign}${stock.change.toFixed(2)}%
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += html;
+                });
+                
+                const now = new Date();
+                timeDiv.innerText = "Mis à jour : " + now.toLocaleTimeString();
+
+            } catch (e) {
+                container.innerHTML = '<p style="color:red">Erreur de chargement...</p>';
+            }
+        }
+
+        fetchStocks();
+        // Auto-refresh toutes les 60 secondes
+        setInterval(fetchStocks, 60000);
+    </script>
+</body>
+</html>
