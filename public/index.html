@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Portfolio Nano V3</title>
+    <title>Portfolio Nano V4 🌍</title>
     <style>
         :root {
             --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --accent: #58a6ff;
@@ -58,9 +58,10 @@
 </head>
 <body>
     <div class="total-block">
-        <div style="color:#8b949e; font-size:0.8rem">VALORISATION</div>
+        <div style="color:#8b949e; font-size:0.8rem">VALORISATION (EUR)</div>
         <div class="total-val" id="total-val">---</div>
         <div class="total-gain" id="total-gain">---</div>
+        <div style="font-size:0.7rem; color:#444; margin-top:5px">Taux EUR/USD : <span id="forex-rate">-</span></div>
     </div>
 
     <div id="list">Chargement...</div>
@@ -71,7 +72,7 @@
             <h3 style="margin-top:0">Position</h3>
             <input type="text" id="symbol" placeholder="Symbole (ex: MEDCL.PA)" />
             <input type="number" id="qty" placeholder="Quantité" />
-            <input type="number" id="pru" placeholder="PRU (Prix d'achat moyen)" step="0.01" />
+            <input type="number" id="pru" placeholder="PRU en EUROS (ex: 18.69)" step="0.01" />
             <input type="password" id="pwd" placeholder="Mot de passe (nano123)" />
             <div class="actions">
                 <button onclick="closeModal()" style="background:transparent;color:#8b949e">Annuler</button>
@@ -88,38 +89,39 @@
             try {
                 const res = await fetch('/api/stocks');
                 const data = await res.json();
-                render(data);
+                render(data.stocks, data.forex);
             } catch (e) {
                 document.getElementById('list').innerHTML = 'Erreur';
             }
         }
 
-        function render(stocks) {
+        function render(stocks, forex) {
             const list = document.getElementById('list');
             list.innerHTML = '';
             let totalEur = 0;
             let totalGainEur = 0;
 
+            document.getElementById('forex-rate').innerText = forex.toFixed(4);
+
             stocks.forEach(s => {
                 if (s.error) return;
                 
-                // Conversion USD (fixe 0.96 pour l'instant)
-                const rate = s.currency === 'USD' ? 0.96 : 1;
-                const valEur = s.totalValue * rate;
-                const gainEur = s.gain * rate;
-                
-                totalEur += valEur;
-                totalGainEur += gainEur;
+                // Tout est déjà calculé en EUR côté serveur
+                totalEur += s.totalValue;
+                totalGainEur += s.gain;
 
                 const isUp = s.gain >= 0;
                 const currency = s.currency === 'USD' ? '$' : '€';
                 
+                // Pour l'affichage PRU, on précise que c'est des Euros si OCS
+                const pruCurrency = '€'; 
+
                 const html = `
                     <div class="card" onclick="edit('${s.symbol}', ${s.quantity}, ${s.pru})">
                         <div class="info">
                             <span class="symbol">${s.symbol.replace('.PA','')}</span>
                             <span class="name">${s.name.substring(0,15)}..</span>
-                            <span class="details">${s.quantity} x ${s.pru} ${currency} (PRU)</span>
+                            <span class="details">${s.quantity} x ${s.pru} ${pruCurrency} (PRU)</span>
                         </div>
                         <div class="price-block">
                             <div class="price">${s.price.toFixed(2)} ${currency}</div>
@@ -127,7 +129,7 @@
                                 ${s.dayChange>=0?'+':''}${s.dayChange.toFixed(2)}% (j)
                             </span>
                             <div class="gain-val ${isUp?'bg-up':'bg-down'}">
-                                ${isUp?'+':''}${s.gain.toFixed(0)} ${currency} (${s.gainPercent.toFixed(1)}%)
+                                ${isUp?'+':''}${s.gain.toFixed(0)} € (${s.gainPercent.toFixed(1)}%)
                             </div>
                         </div>
                     </div>
