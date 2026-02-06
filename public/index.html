@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Portfolio Nano V7 🚀</title>
+    <title>Portfolio Nano V8 🌍</title>
     <style>
         :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --accent: #58a6ff; --border: #30363d; --green: #3fb950; --red: #f85149; }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 16px; padding-bottom: 80px; }
@@ -146,34 +146,66 @@
             list.innerHTML = '';
             document.getElementById('forex-rate').innerText = globalData.forex.toFixed(4);
             
-            // Filtrage
-            let lines = globalData.lines;
-            if(currentTab !== 'GLOBAL') lines = lines.filter(l => l.account === currentTab);
-
+            let linesToDisplay = [];
             let totalVal = 0;
             let totalInvested = 0;
 
-            if(currentTab === 'GLOBAL') {
+            if (currentTab === 'GLOBAL') {
+                // Investissement total
                 totalInvested += (globalData.accounts['PEA']?.initial || 0);
                 totalInvested += (globalData.accounts['PME']?.initial || 0);
                 totalInvested += (globalData.accounts['CTO']?.initial || 0);
+
+                // Consolidation
+                const consolidated = {};
+                globalData.lines.forEach(line => {
+                    if (line.error) return;
+                    if (!consolidated[line.symbol]) {
+                        // Clone et reset compteurs
+                        consolidated[line.symbol] = JSON.parse(JSON.stringify(line));
+                        consolidated[line.symbol].quantity = 0;
+                        consolidated[line.symbol].totalValue = 0;
+                        consolidated[line.symbol].gain = 0;
+                        consolidated[line.symbol]._investTotal = 0;
+                    }
+                    const entry = consolidated[line.symbol];
+                    entry.quantity += line.quantity;
+                    entry.totalValue += line.totalValue;
+                    entry.gain += line.gain;
+                    entry._investTotal += (line.pru * line.quantity);
+                });
+
+                // Calculs finaux sur la consolidation
+                linesToDisplay = Object.values(consolidated).map(c => {
+                    c.pru = c.quantity > 0 ? c._investTotal / c.quantity : 0;
+                    c.account = 'GLOBAL'; // Tag spécial pour désactiver le clic
+                    return c;
+                });
+
             } else {
+                linesToDisplay = globalData.lines.filter(l => l.account === currentTab);
                 totalInvested = globalData.accounts[currentTab]?.initial || 0;
             }
 
-            lines.forEach(s => {
-                if (s.error) return;
-                totalVal += s.totalValue;
+            linesToDisplay.forEach(l => totalVal += l.totalValue);
 
+            linesToDisplay.forEach(s => {
+                if (s.error) return;
+                
                 const isUp = s.change >= 0;
                 const sparkline = createSparkline(s.history, s.change >= 0);
+                
+                // Désactiver clic en mode GLOBAL
+                const canEdit = currentTab !== 'GLOBAL';
+                const clickAttr = canEdit ? `onclick="editLine('${s.id}', '${s.symbol}', '${s.account}', ${s.quantity}, ${s.pru})"` : '';
+                const styleAttr = canEdit ? 'cursor:pointer' : 'cursor:default; opacity:0.9';
 
                 const html = `
-                    <div class="card" onclick="editLine('${s.id}', '${s.symbol}', '${s.account}', ${s.quantity}, ${s.pru})">
+                    <div class="card" ${clickAttr} style="${styleAttr}">
                         <div class="info">
                             <span class="symbol">${s.symbol.replace('.PA','')}</span>
                             <span class="name">${s.name.substring(0,12)}..</span>
-                            <span class="details">${s.quantity} x ${s.pru} €</span>
+                            <span class="details">${s.quantity} x ${s.pru.toFixed(3)} €</span>
                         </div>
                         <div class="chart" style="width:60px;height:30px">${sparkline}</div>
                         <div class="price-block">
@@ -198,10 +230,14 @@
             
             const performance = totalVal - totalInvested;
             const isPerfUp = performance >= 0;
+            
+            // Calcul % performance globale
+            const perfPercent = totalInvested > 0 ? ((performance/totalInvested)*100).toFixed(2) : 0;
+            
             document.getElementById('perf-global').innerHTML = `
                 <span class="${isPerfUp?'up':'down'}">
                     ${isPerfUp?'+':''}${formatEur(performance)} 
-                    (${totalInvested>0 ? ((performance/totalInvested)*100).toFixed(2) : 0}%)
+                    (${perfPercent}%)
                 </span>
             `;
             document.getElementById('invested-txt').innerText = `Investi : ${formatEur(totalInvested)}`;
