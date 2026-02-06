@@ -89,12 +89,18 @@
 
     <script>
         async function load() {
+            const btn = document.querySelector('button[onclick="load()"]');
+            if(btn) btn.innerHTML = '⏳'; // Feedback visuel
+
             try {
-                const res = await fetch('/api/stocks');
+                // Ajout timestamp pour éviter le cache navigateur
+                const res = await fetch('/api/stocks?t=' + Date.now());
                 const data = await res.json();
                 render(data.stocks, data.forex);
             } catch (e) {
                 document.getElementById('list').innerHTML = 'Erreur';
+            } finally {
+                if(btn) btn.innerHTML = '🔄';
             }
         }
 
