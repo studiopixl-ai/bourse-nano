@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Patrimoine Nano 🏛️</title>
+    <title>Portfolio Nano V7 🚀</title>
     <style>
         :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --accent: #58a6ff; --border: #30363d; --green: #3fb950; --red: #f85149; }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 16px; padding-bottom: 80px; }
         
-        /* Tabs */
         .tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
         .tab { background: var(--card); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; color: #8b949e; cursor: pointer; white-space: nowrap; }
         .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
@@ -30,6 +29,10 @@
         .price-block { text-align: right; }
         .price { font-size: 1.1rem; font-weight: bold; color: #f0f6fc; }
         .gain-val { font-size: 0.8rem; font-weight: 600; }
+        
+        .perfs-row { grid-column: 1 / -1; display: flex; justify-content: space-between; border-top: 1px solid #30363d; margin-top: 10px; padding-top: 8px; font-size: 0.7rem; color: #8b949e; }
+        .perf-item { text-align: center; }
+        .perf-item span { display: block; font-weight: 600; font-size: 0.75rem; margin-top: 2px; }
         
         .up { color: var(--green); } .down { color: var(--red); }
         .bg-up { background: rgba(63, 185, 80, 0.15); color: var(--green); padding: 2px 6px; border-radius: 4px;}
@@ -63,6 +66,10 @@
         <div class="perf-global" id="perf-global">---</div>
         <div class="invested" id="invested-txt">---</div>
         <div class="edit-invest" onclick="editInvest()">⚙️</div>
+        <div style="font-size:0.7rem; color:#444; margin-top:5px; display:flex; justify-content:center; align-items:center; gap:8px;">
+            <span>EUR/USD : <span id="forex-rate">-</span></span>
+            <button onclick="load()" style="background:transparent; border:1px solid #333; color:#8b949e; border-radius:4px; cursor:pointer; padding:2px 6px;">🔄</button>
+        </div>
     </div>
 
     <div id="list">Chargement...</div>
@@ -111,11 +118,14 @@
         let globalData = null;
 
         async function load() {
+            const btn = document.querySelector('button[onclick="load()"]');
+            if(btn) btn.innerHTML = '⏳';
             try {
                 const res = await fetch('/api/stocks?t=' + Date.now());
                 globalData = await res.json();
                 render();
             } catch (e) { document.getElementById('list').innerHTML = 'Erreur'; }
+            finally { if(btn) btn.innerHTML = '🔄'; }
         }
 
         function setTab(tab) {
@@ -125,22 +135,24 @@
             render();
         }
 
+        function fmtPct(val) {
+            const isUp = val >= 0;
+            return `<span class="${isUp?'up':'down'}">${isUp?'+':''}${val.toFixed(1)}%</span>`;
+        }
+
         function render() {
             if(!globalData) return;
             const list = document.getElementById('list');
             list.innerHTML = '';
+            document.getElementById('forex-rate').innerText = globalData.forex.toFixed(4);
             
             // Filtrage
             let lines = globalData.lines;
-            if(currentTab !== 'GLOBAL') {
-                lines = lines.filter(l => l.account === currentTab);
-            }
+            if(currentTab !== 'GLOBAL') lines = lines.filter(l => l.account === currentTab);
 
-            // Calculs
             let totalVal = 0;
             let totalInvested = 0;
 
-            // Investissement initial (selon comptes)
             if(currentTab === 'GLOBAL') {
                 totalInvested += (globalData.accounts['PEA']?.initial || 0);
                 totalInvested += (globalData.accounts['PME']?.initial || 0);
@@ -153,8 +165,8 @@
                 if (s.error) return;
                 totalVal += s.totalValue;
 
-                const isUp = s.gain >= 0;
-                const sparkline = createSparkline(s.history, s.dayChange >= 0);
+                const isUp = s.change >= 0;
+                const sparkline = createSparkline(s.history, s.change >= 0);
 
                 const html = `
                     <div class="card" onclick="editLine('${s.id}', '${s.symbol}', '${s.account}', ${s.quantity}, ${s.pru})">
@@ -166,16 +178,21 @@
                         <div class="chart" style="width:60px;height:30px">${sparkline}</div>
                         <div class="price-block">
                             <div class="price">${s.price.toFixed(2)} ${s.currency==='USD'?'$':'€'}</div>
-                            <div class="gain-val ${isUp?'bg-up':'bg-down'}">
-                                ${isUp?'+':''}${s.gain.toFixed(0)} €
+                            <div class="gain-val ${s.gain>=0?'bg-up':'bg-down'}">
+                                ${s.gain>=0?'+':''}${s.gain.toFixed(0)} €
                             </div>
+                        </div>
+                        <div class="perfs-row">
+                            <div class="perf-item">Jour<span>${fmtPct(s.change)}</span></div>
+                            <div class="perf-item">1 Sem<span>${fmtPct(s.perf1w)}</span></div>
+                            <div class="perf-item">1 Mois<span>${fmtPct(s.perf1m)}</span></div>
+                            <div class="perf-item">YTD<span>${fmtPct(s.perfYtd)}</span></div>
                         </div>
                     </div>
                 `;
                 list.innerHTML += html;
             });
 
-            // Affichage Totaux
             document.getElementById('tab-name').innerText = currentTab;
             document.getElementById('total-val').innerText = formatEur(totalVal);
             
