@@ -3,47 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Portfolio Nano V8 🌍</title>
+    <title>Portfolio Nano V9 🌍</title>
     <style>
         :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --accent: #58a6ff; --border: #30363d; --green: #3fb950; --red: #f85149; }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 16px; padding-bottom: 80px; }
-        
         .tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
         .tab { background: var(--card); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; color: #8b949e; cursor: pointer; white-space: nowrap; }
         .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-        .total-block {
-            background: linear-gradient(135deg, #1f2937, #0d1117); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center; position: relative;
-        }
+        .total-block { background: linear-gradient(135deg, #1f2937, #0d1117); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center; position: relative; }
         .total-val { font-size: 2.2rem; font-weight: 800; color: #fff; }
         .perf-global { font-size: 1.1rem; font-weight: 600; margin-top: 8px; }
         .invested { font-size: 0.8rem; color: #8b949e; margin-top: 4px; }
         .edit-invest { position: absolute; top: 10px; right: 10px; font-size: 1.2rem; cursor: pointer; opacity: 0.5; }
-
-        .card {
-            background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 60px 100px; gap: 8px; align-items: center;
-        }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 60px 100px; gap: 8px; align-items: center; }
         .symbol { font-weight: bold; font-size: 1rem; color: var(--accent); }
         .name { font-size: 0.75rem; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
         .details { font-size: 0.7rem; color: #8b949e; margin-top: 2px; }
         .price-block { text-align: right; }
         .price { font-size: 1.1rem; font-weight: bold; color: #f0f6fc; }
         .gain-val { font-size: 0.8rem; font-weight: 600; }
-        
         .perfs-row { grid-column: 1 / -1; display: flex; justify-content: space-between; border-top: 1px solid #30363d; margin-top: 10px; padding-top: 8px; font-size: 0.7rem; color: #8b949e; }
         .perf-item { text-align: center; }
         .perf-item span { display: block; font-weight: 600; font-size: 0.75rem; margin-top: 2px; }
-        
         .up { color: var(--green); } .down { color: var(--red); }
         .bg-up { background: rgba(63, 185, 80, 0.15); color: var(--green); padding: 2px 6px; border-radius: 4px;}
         .bg-down { background: rgba(248, 81, 73, 0.15); color: var(--red); padding: 2px 6px; border-radius: 4px;}
-
         .chart svg { width: 100%; height: 100%; overflow: visible; }
         .line-up { stroke: var(--green); fill: none; stroke-width: 2; }
         .line-down { stroke: var(--red); fill: none; stroke-width: 2; }
-
         .btn-add { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 2rem; box-shadow: 0 4px 12px rgba(88, 166, 255, 0.4); cursor: pointer; }
-        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 100; }
         .modal-content { background: var(--card); padding: 24px; border-radius: 12px; width: 85%; max-width: 320px; border: 1px solid var(--border); }
         input, select { width: 100%; padding: 12px; margin: 8px 0; background: #0d1117; border: 1px solid var(--border); color: white; border-radius: 8px; box-sizing: border-box; }
@@ -88,6 +76,7 @@
             <input type="text" id="symbol" placeholder="Symbole (ex: ALCJ.PA)" />
             <input type="number" id="qty" placeholder="Quantité" />
             <input type="number" id="pru" placeholder="PRU Unit. (€)" step="0.001" />
+            <input type="text" id="url" placeholder="Lien Boursorama (Optionnel)" style="font-size:0.8rem" />
             <input type="password" id="pwd" placeholder="Mot de passe (nano123)" />
             <div class="actions">
                 <button onclick="closeModal()" style="background:transparent;color:#8b949e">Annuler</button>
@@ -151,22 +140,21 @@
             let totalInvested = 0;
 
             if (currentTab === 'GLOBAL') {
-                // Investissement total
                 totalInvested += (globalData.accounts['PEA']?.initial || 0);
                 totalInvested += (globalData.accounts['PME']?.initial || 0);
                 totalInvested += (globalData.accounts['CTO']?.initial || 0);
 
-                // Consolidation
                 const consolidated = {};
                 globalData.lines.forEach(line => {
                     if (line.error) return;
                     if (!consolidated[line.symbol]) {
-                        // Clone et reset compteurs
                         consolidated[line.symbol] = JSON.parse(JSON.stringify(line));
                         consolidated[line.symbol].quantity = 0;
                         consolidated[line.symbol].totalValue = 0;
                         consolidated[line.symbol].gain = 0;
                         consolidated[line.symbol]._investTotal = 0;
+                        // On garde l'URL de la première ligne rencontrée (c'est souvent la même)
+                        if (!consolidated[line.symbol].url && line.url) consolidated[line.symbol].url = line.url;
                     }
                     const entry = consolidated[line.symbol];
                     entry.quantity += line.quantity;
@@ -175,17 +163,18 @@
                     entry._investTotal += (line.pru * line.quantity);
                 });
 
-                // Calculs finaux sur la consolidation
                 linesToDisplay = Object.values(consolidated).map(c => {
                     c.pru = c.quantity > 0 ? c._investTotal / c.quantity : 0;
-                    c.account = 'GLOBAL'; // Tag spécial pour désactiver le clic
+                    c.account = 'GLOBAL';
                     return c;
                 });
-
             } else {
                 linesToDisplay = globalData.lines.filter(l => l.account === currentTab);
                 totalInvested = globalData.accounts[currentTab]?.initial || 0;
             }
+
+            // Tri par valorisation décroissante (le plus gros montant en haut)
+            linesToDisplay.sort((a, b) => b.totalValue - a.totalValue);
 
             linesToDisplay.forEach(l => totalVal += l.totalValue);
 
@@ -194,18 +183,26 @@
                 
                 const isUp = s.change >= 0;
                 const sparkline = createSparkline(s.history, s.change >= 0);
-                
-                // Désactiver clic en mode GLOBAL
                 const canEdit = currentTab !== 'GLOBAL';
-                const clickAttr = canEdit ? `onclick="editLine('${s.id}', '${s.symbol}', '${s.account}', ${s.quantity}, ${s.pru})"` : '';
+                const clickAttr = canEdit ? `onclick="editLine('${s.id}', '${s.symbol}', '${s.account}', ${s.quantity}, ${s.pru}, '${s.url || ''}')"` : '';
                 const styleAttr = canEdit ? 'cursor:pointer' : 'cursor:default; opacity:0.9';
+
+                // Gestion du lien Boursorama
+                let linkHtml = '';
+                if (s.url) {
+                    linkHtml = `<a href="${s.url}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none; font-size:0.8rem; margin-left:4px;">↗️</a>`;
+                } else {
+                    // Lien recherche par défaut si pas d'URL
+                    const cleanSym = s.symbol.replace('.PA','');
+                    linkHtml = `<a href="https://www.boursorama.com/recherche/text/${cleanSym}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none; font-size:0.8rem; margin-left:4px;">↗️</a>`;
+                }
 
                 const html = `
                     <div class="card" ${clickAttr} style="${styleAttr}">
                         <div class="info">
                             <span class="symbol">
                                 ${s.symbol.replace('.PA','')}
-                                <a href="https://www.boursorama.com/recherche/text/${s.symbol.replace('.PA','')}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none; font-size:0.8rem; margin-left:4px;">↗️</a>
+                                ${linkHtml}
                             </span>
                             <span class="name">${s.name.substring(0,12)}..</span>
                             <span class="details">${s.quantity} x ${s.pru.toFixed(3)} €</span>
@@ -213,6 +210,9 @@
                         <div class="chart" style="width:60px;height:30px">${sparkline}</div>
                         <div class="price-block">
                             <div class="price">${s.price.toFixed(2)} ${s.currency==='USD'?'$':'€'}</div>
+                            <span class="day-change ${isUp?'up':'down'}">
+                                ${isUp?'+':''}${s.dayChange.toFixed(2)}%
+                            </span>
                             <div class="gain-val ${s.gain>=0?'bg-up':'bg-down'}">
                                 ${s.gain>=0?'+':''}${s.gain.toFixed(0)} €
                             </div>
@@ -230,13 +230,9 @@
 
             document.getElementById('tab-name').innerText = currentTab;
             document.getElementById('total-val').innerText = formatEur(totalVal);
-            
             const performance = totalVal - totalInvested;
             const isPerfUp = performance >= 0;
-            
-            // Calcul % performance globale
             const perfPercent = totalInvested > 0 ? ((performance/totalInvested)*100).toFixed(2) : 0;
-            
             document.getElementById('perf-global').innerHTML = `
                 <span class="${isPerfUp?'up':'down'}">
                     ${isPerfUp?'+':''}${formatEur(performance)} 
@@ -247,7 +243,6 @@
         }
 
         function formatEur(val) { return val.toLocaleString('fr-FR', {style:'currency', currency:'EUR', maximumFractionDigits:0}); }
-        
         function createSparkline(history, isUp) {
             if (!history || history.length < 2) return '';
             const min = Math.min(...history), max = Math.max(...history), range = max - min || 1;
@@ -257,20 +252,21 @@
             return `<svg viewBox="0 -5 60 40"><path d="${path}" class="${isUp?'line-up':'line-down'}" /></svg>`;
         }
 
-        // --- Modals ---
         const modal = document.getElementById('modal');
         function openModal() { 
             document.getElementById('line-id').value = ''; 
             document.getElementById('symbol').value = ''; 
             document.getElementById('account').value = currentTab === 'GLOBAL' ? 'PEA' : currentTab;
+            document.getElementById('url').value = '';
             modal.style.display = 'flex'; 
         }
-        function editLine(id, sym, acc, qty, pru) {
+        function editLine(id, sym, acc, qty, pru, url) {
             document.getElementById('line-id').value = id;
             document.getElementById('symbol').value = sym;
             document.getElementById('account').value = acc;
             document.getElementById('qty').value = qty;
             document.getElementById('pru').value = pru;
+            document.getElementById('url').value = url;
             modal.style.display = 'flex';
         }
         function closeModal() { modal.style.display = 'none'; }
@@ -281,23 +277,22 @@
                 symbol: document.getElementById('symbol').value.toUpperCase(),
                 account: document.getElementById('account').value,
                 quantity: document.getElementById('qty').value,
-                pru: document.getElementById('pru').value
+                pru: document.getElementById('pru').value,
+                url: document.getElementById('url').value
             };
             await apiCall('update_line', payload, document.getElementById('pwd').value);
         }
-
+        // ... (rest is same) ...
         async function deleteLine() {
             if(!confirm("Supprimer ?")) return;
             await apiCall('delete_line', { id: document.getElementById('line-id').value }, document.getElementById('pwd').value);
         }
-
-        function editInvest() {
+        async function editInvest() {
             if(currentTab === 'GLOBAL') return alert("Sélectionnez un compte (PEA, PME...) pour modifier son investissement.");
             document.getElementById('invest-account-name').innerText = currentTab;
             document.getElementById('initial-amount').value = globalData.accounts[currentTab]?.initial || 0;
             document.getElementById('modal-invest').style.display = 'flex';
         }
-
         async function saveInvest() {
             await apiCall('update_account', {
                 account: currentTab,
@@ -305,7 +300,6 @@
             }, document.getElementById('pwd-invest').value);
             document.getElementById('modal-invest').style.display = 'none';
         }
-
         async function apiCall(action, payload, password) {
             const res = await fetch('/api/portfolio', {
                 method: 'POST',
@@ -314,7 +308,6 @@
             });
             if(res.ok) { closeModal(); load(); } else alert("Erreur (Mot de passe ?)");
         }
-
         load();
         setInterval(load, 60000);
     </script>
