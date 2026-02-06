@@ -113,10 +113,7 @@
                 const res = await fetch('/api/stocks?t=' + Date.now());
                 globalData = await res.json();
                 render();
-            } catch (e) { 
-                console.error(e);
-                document.getElementById('list').innerHTML = 'Erreur: ' + e.message; 
-            }
+            } catch (e) { document.getElementById('list').innerHTML = 'Erreur'; }
             finally { if(btn) btn.innerHTML = '🔄'; }
         }
 
@@ -214,7 +211,7 @@
                         <div class="price-block">
                             <div class="price">${s.price.toFixed(2)} ${s.currency==='USD'?'$':'€'}</div>
                             <span class="day-change ${isUp?'up':'down'}">
-                                ${isUp?'+':''}${s.dayChange.toFixed(2)}%
+                                ${isUp?'+':''}${s.change.toFixed(2)}%
                             </span>
                             <div class="gain-val ${s.gain>=0?'bg-up':'bg-down'}">
                                 ${s.gain>=0?'+':''}${s.gain.toFixed(0)} €
