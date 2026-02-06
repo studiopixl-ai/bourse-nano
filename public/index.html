@@ -3,173 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Portfolio Nano V5 📈</title>
+    <title>Patrimoine Nano 🏛️</title>
     <style>
-        :root {
-            --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --accent: #58a6ff;
-            --border: #30363d; --green: #3fb950; --red: #f85149;
-        }
-        body {
-            font-family: -apple-system, sans-serif; background-color: var(--bg);
-            color: var(--text); margin: 0; padding: 16px; padding-bottom: 80px;
-        }
+        :root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --accent: #58a6ff; --border: #30363d; --green: #3fb950; --red: #f85149; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 16px; padding-bottom: 80px; }
+        
+        /* Tabs */
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+        .tab { background: var(--card); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; color: #8b949e; cursor: pointer; white-space: nowrap; }
+        .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+
         .total-block {
-            background: linear-gradient(135deg, #1f2937, #0d1117);
-            border: 1px solid var(--border); border-radius: 12px; padding: 20px;
-            margin-bottom: 24px; text-align: center;
+            background: linear-gradient(135deg, #1f2937, #0d1117); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center; position: relative;
         }
         .total-val { font-size: 2.2rem; font-weight: 800; color: #fff; }
-        .total-gain { font-size: 1rem; font-weight: 600; margin-top: 5px; }
+        .perf-global { font-size: 1.1rem; font-weight: 600; margin-top: 8px; }
+        .invested { font-size: 0.8rem; color: #8b949e; margin-top: 4px; }
+        .edit-invest { position: absolute; top: 10px; right: 10px; font-size: 1.2rem; cursor: pointer; opacity: 0.5; }
 
         .card {
-            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-            padding: 16px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 80px 100px;
-            gap: 8px; position: relative; align-items: center;
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 60px 100px; gap: 8px; align-items: center;
         }
-        .info { display: flex; flex-direction: column; overflow: hidden;}
-        .symbol { font-weight: bold; font-size: 1.1rem; color: var(--accent); }
-        .name { font-size: 0.8rem; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .details { font-size: 0.75rem; color: #8b949e; margin-top: 4px; }
-        
+        .symbol { font-weight: bold; font-size: 1rem; color: var(--accent); }
+        .name { font-size: 0.75rem; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .details { font-size: 0.7rem; color: #8b949e; margin-top: 2px; }
         .price-block { text-align: right; }
         .price { font-size: 1.1rem; font-weight: bold; color: #f0f6fc; }
-        .day-change { font-size: 0.7rem; color: #8b949e; }
-        .gain-val { font-size: 0.8rem; font-weight: 600; margin-top: 2px; }
+        .gain-val { font-size: 0.8rem; font-weight: 600; }
         
-        /* Sparkline */
-        .chart { width: 80px; height: 40px; display: flex; align-items: center; justify-content: center; }
-        .chart svg { width: 100%; height: 100%; overflow: visible; }
-        .line-up { stroke: var(--green); fill: none; stroke-width: 2; }
-        .line-down { stroke: var(--red); fill: none; stroke-width: 2; }
-        
-        .up { color: var(--green); }
-        .down { color: var(--red); }
+        .up { color: var(--green); } .down { color: var(--red); }
         .bg-up { background: rgba(63, 185, 80, 0.15); color: var(--green); padding: 2px 6px; border-radius: 4px;}
         .bg-down { background: rgba(248, 81, 73, 0.15); color: var(--red); padding: 2px 6px; border-radius: 4px;}
 
-        .btn-add {
-            position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%;
-            background: var(--accent); color: white; border: none; font-size: 2rem; box-shadow: 0 4px 12px rgba(88, 166, 255, 0.4); cursor: pointer;
-        }
-        /* Modal Styles */
+        .chart svg { width: 100%; height: 100%; overflow: visible; }
+        .line-up { stroke: var(--green); fill: none; stroke-width: 2; }
+        .line-down { stroke: var(--red); fill: none; stroke-width: 2; }
+
+        .btn-add { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 2rem; box-shadow: 0 4px 12px rgba(88, 166, 255, 0.4); cursor: pointer; }
+        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 100; }
         .modal-content { background: var(--card); padding: 24px; border-radius: 12px; width: 85%; max-width: 320px; border: 1px solid var(--border); }
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #0d1117; border: 1px solid var(--border); color: white; border-radius: 8px; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #0d1117; border: 1px solid var(--border); color: white; border-radius: 8px; box-sizing: border-box; }
         .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
         button { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
         .btn-save { background: var(--accent); color: white; }
     </style>
 </head>
 <body>
+    <div class="tabs">
+        <div class="tab active" onclick="setTab('GLOBAL')">GLOBAL</div>
+        <div class="tab" onclick="setTab('PEA')">PEA</div>
+        <div class="tab" onclick="setTab('PME')">PME</div>
+        <div class="tab" onclick="setTab('CTO')">CTO</div>
+    </div>
+
     <div class="total-block">
-        <div style="color:#8b949e; font-size:0.8rem">VALORISATION (EUR)</div>
+        <div style="color:#8b949e; font-size:0.8rem">VALORISATION <span id="tab-name">GLOBAL</span></div>
         <div class="total-val" id="total-val">---</div>
-        <div class="total-gain" id="total-gain">---</div>
-        <div style="font-size:0.7rem; color:#444; margin-top:5px; display:flex; justify-content:center; align-items:center; gap:8px;">
-            <span>Taux EUR/USD : <span id="forex-rate">-</span></span>
-            <button onclick="load()" style="background:transparent; border:1px solid #333; color:#8b949e; border-radius:4px; cursor:pointer; padding:2px 6px;">🔄</button>
-        </div>
+        <div class="perf-global" id="perf-global">---</div>
+        <div class="invested" id="invested-txt">---</div>
+        <div class="edit-invest" onclick="editInvest()">⚙️</div>
     </div>
 
     <div id="list">Chargement...</div>
     <button class="btn-add" onclick="openModal()">+</button>
 
+    <!-- Modal Ajout Ligne -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <h3 style="margin-top:0">Position</h3>
-            <input type="text" id="symbol" placeholder="Symbole (ex: MEDCL.PA)" />
+            <input type="hidden" id="line-id" />
+            <select id="account">
+                <option value="PEA">PEA</option>
+                <option value="PME">PEA PME</option>
+                <option value="CTO">Compte Titres (CTO)</option>
+            </select>
+            <input type="text" id="symbol" placeholder="Symbole (ex: ALCJ.PA)" />
             <input type="number" id="qty" placeholder="Quantité" />
-            <input type="number" id="pru" placeholder="PRU en EUROS (ex: 18.69)" step="0.01" />
+            <input type="number" id="pru" placeholder="PRU Unit. (€)" step="0.001" />
             <input type="password" id="pwd" placeholder="Mot de passe (nano123)" />
             <div class="actions">
                 <button onclick="closeModal()" style="background:transparent;color:#8b949e">Annuler</button>
-                <button class="btn-save" onclick="saveStock()">Enregistrer</button>
+                <button class="btn-save" onclick="saveLine()">Enregistrer</button>
             </div>
             <div style="margin-top:15px; border-top:1px solid #333; padding-top:10px; text-align:center;">
-                <button onclick="deleteStock()" style="background:transparent;color:var(--red);font-size:0.8rem">Supprimer</button>
+                <button onclick="deleteLine()" style="background:transparent;color:var(--red);font-size:0.8rem">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Investissement Initial -->
+    <div id="modal-invest" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0">Investissement Initial</h3>
+            <p style="color:#8b949e;font-size:0.9rem">Montant versé sur le compte : <b id="invest-account-name"></b></p>
+            <input type="number" id="initial-amount" placeholder="Montant en €" />
+            <input type="password" id="pwd-invest" placeholder="Mot de passe" />
+            <div class="actions">
+                <button onclick="document.getElementById('modal-invest').style.display='none'" style="background:transparent;color:#8b949e">Annuler</button>
+                <button class="btn-save" onclick="saveInvest()">Sauver</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Fonction pour dessiner le mini-graphique (Sparkline)
-        function createSparkline(history, isUp) {
-            if (!history || history.length < 2) return '';
-            
-            const min = Math.min(...history);
-            const max = Math.max(...history);
-            const range = max - min || 1;
-            
-            // On normalise les points entre 0 et 100% de la hauteur/largeur
-            const width = 80;
-            const height = 40;
-            const step = width / (history.length - 1);
-            
-            let pathD = `M 0 ${height - ((history[0] - min) / range * height)}`;
-            
-            for (let i = 1; i < history.length; i++) {
-                const x = i * step;
-                const y = height - ((history[i] - min) / range * height);
-                pathD += ` L ${x} ${y}`;
-            }
-            
-            const colorClass = isUp ? 'line-up' : 'line-down';
-            return `<svg viewBox="0 -5 ${width} ${height+10}"><path d="${pathD}" class="${colorClass}" /></svg>`;
-        }
+        let currentTab = 'GLOBAL';
+        let globalData = null;
 
         async function load() {
-            const btn = document.querySelector('button[onclick="load()"]');
-            if(btn) btn.innerHTML = '⏳';
-
             try {
                 const res = await fetch('/api/stocks?t=' + Date.now());
-                const data = await res.json();
-                render(data.stocks, data.forex);
-            } catch (e) {
-                document.getElementById('list').innerHTML = 'Erreur';
-            } finally {
-                if(btn) btn.innerHTML = '🔄';
-            }
+                globalData = await res.json();
+                render();
+            } catch (e) { document.getElementById('list').innerHTML = 'Erreur'; }
         }
 
-        function render(stocks, forex) {
+        function setTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => { if(t.innerText===tab) t.classList.add('active'); });
+            render();
+        }
+
+        function render() {
+            if(!globalData) return;
             const list = document.getElementById('list');
             list.innerHTML = '';
-            let totalEur = 0;
-            let totalGainEur = 0;
+            
+            // Filtrage
+            let lines = globalData.lines;
+            if(currentTab !== 'GLOBAL') {
+                lines = lines.filter(l => l.account === currentTab);
+            }
 
-            document.getElementById('forex-rate').innerText = forex.toFixed(4);
+            // Calculs
+            let totalVal = 0;
+            let totalInvested = 0;
 
-            stocks.forEach(s => {
+            // Investissement initial (selon comptes)
+            if(currentTab === 'GLOBAL') {
+                totalInvested += (globalData.accounts['PEA']?.initial || 0);
+                totalInvested += (globalData.accounts['PME']?.initial || 0);
+                totalInvested += (globalData.accounts['CTO']?.initial || 0);
+            } else {
+                totalInvested = globalData.accounts[currentTab]?.initial || 0;
+            }
+
+            lines.forEach(s => {
                 if (s.error) return;
-                
-                totalEur += s.totalValue;
-                totalGainEur += s.gain;
+                totalVal += s.totalValue;
 
-                const isUp = s.dayChange >= 0; // Couleur du graphique dépend de la variation du jour
-                const currency = s.currency === 'USD' ? '$' : '€';
-                const pruCurrency = '€'; 
-
-                // Génération du graphique
-                const sparkline = createSparkline(s.history, isUp);
+                const isUp = s.gain >= 0;
+                const sparkline = createSparkline(s.history, s.dayChange >= 0);
 
                 const html = `
-                    <div class="card" onclick="edit('${s.symbol}', ${s.quantity}, ${s.pru})">
+                    <div class="card" onclick="editLine('${s.id}', '${s.symbol}', '${s.account}', ${s.quantity}, ${s.pru})">
                         <div class="info">
                             <span class="symbol">${s.symbol.replace('.PA','')}</span>
                             <span class="name">${s.name.substring(0,12)}..</span>
-                            <span class="details">${s.quantity} x ${s.pru} ${pruCurrency}</span>
+                            <span class="details">${s.quantity} x ${s.pru} €</span>
                         </div>
-                        <div class="chart">
-                            ${sparkline}
-                        </div>
+                        <div class="chart" style="width:60px;height:30px">${sparkline}</div>
                         <div class="price-block">
-                            <div class="price">${s.price.toFixed(2)} ${currency}</div>
-                            <span class="day-change ${isUp?'up':'down'}">
-                                ${isUp?'+':''}${s.dayChange.toFixed(2)}%
-                            </span>
-                            <div class="gain-val ${s.gain>=0?'bg-up':'bg-down'}">
-                                ${s.gain>=0?'+':''}${s.gain.toFixed(0)} €
+                            <div class="price">${s.price.toFixed(2)} ${s.currency==='USD'?'$':'€'}</div>
+                            <div class="gain-val ${isUp?'bg-up':'bg-down'}">
+                                ${isUp?'+':''}${s.gain.toFixed(0)} €
                             </div>
                         </div>
                     </div>
@@ -177,57 +175,92 @@
                 list.innerHTML += html;
             });
 
-            document.getElementById('total-val').innerText = totalEur.toLocaleString('fr-FR', {style:'currency', currency:'EUR', maximumFractionDigits:0});
+            // Affichage Totaux
+            document.getElementById('tab-name').innerText = currentTab;
+            document.getElementById('total-val').innerText = formatEur(totalVal);
             
-            const isTotalUp = totalGainEur >= 0;
-            document.getElementById('total-gain').innerHTML = `
-                <span class="${isTotalUp?'bg-up':'bg-down'}">
-                    ${isTotalUp?'+':''}${totalGainEur.toFixed(0)} €
+            const performance = totalVal - totalInvested;
+            const isPerfUp = performance >= 0;
+            document.getElementById('perf-global').innerHTML = `
+                <span class="${isPerfUp?'up':'down'}">
+                    ${isPerfUp?'+':''}${formatEur(performance)} 
+                    (${totalInvested>0 ? ((performance/totalInvested)*100).toFixed(2) : 0}%)
                 </span>
             `;
+            document.getElementById('invested-txt').innerText = `Investi : ${formatEur(totalInvested)}`;
         }
 
+        function formatEur(val) { return val.toLocaleString('fr-FR', {style:'currency', currency:'EUR', maximumFractionDigits:0}); }
+        
+        function createSparkline(history, isUp) {
+            if (!history || history.length < 2) return '';
+            const min = Math.min(...history), max = Math.max(...history), range = max - min || 1;
+            let path = `M 0 ${30 - ((history[0] - min)/range * 30)}`;
+            const step = 60 / (history.length - 1);
+            history.forEach((h,i) => { if(i>0) path += ` L ${i*step} ${30 - ((h - min)/range * 30)}`; });
+            return `<svg viewBox="0 -5 60 40"><path d="${path}" class="${isUp?'line-up':'line-down'}" /></svg>`;
+        }
+
+        // --- Modals ---
         const modal = document.getElementById('modal');
-        const inpSymbol = document.getElementById('symbol');
-        const inpQty = document.getElementById('qty');
-        const inpPru = document.getElementById('pru');
-        const inpPwd = document.getElementById('pwd');
-
-        function openModal() {
-            inpSymbol.value = ''; inpQty.value = ''; inpPru.value = '';
-            modal.style.display = 'flex';
+        function openModal() { 
+            document.getElementById('line-id').value = ''; 
+            document.getElementById('symbol').value = ''; 
+            document.getElementById('account').value = currentTab === 'GLOBAL' ? 'PEA' : currentTab;
+            modal.style.display = 'flex'; 
         }
-        function edit(s, q, p) {
-            inpSymbol.value = s; inpQty.value = q; inpPru.value = p;
+        function editLine(id, sym, acc, qty, pru) {
+            document.getElementById('line-id').value = id;
+            document.getElementById('symbol').value = sym;
+            document.getElementById('account').value = acc;
+            document.getElementById('qty').value = qty;
+            document.getElementById('pru').value = pru;
             modal.style.display = 'flex';
         }
         function closeModal() { modal.style.display = 'none'; }
 
-        async function saveStock() {
+        async function saveLine() {
+            const payload = {
+                id: document.getElementById('line-id').value,
+                symbol: document.getElementById('symbol').value.toUpperCase(),
+                account: document.getElementById('account').value,
+                quantity: document.getElementById('qty').value,
+                pru: document.getElementById('pru').value
+            };
+            await apiCall('update_line', payload, document.getElementById('pwd').value);
+        }
+
+        async function deleteLine() {
+            if(!confirm("Supprimer ?")) return;
+            await apiCall('delete_line', { id: document.getElementById('line-id').value }, document.getElementById('pwd').value);
+        }
+
+        function editInvest() {
+            if(currentTab === 'GLOBAL') return alert("Sélectionnez un compte (PEA, PME...) pour modifier son investissement.");
+            document.getElementById('invest-account-name').innerText = currentTab;
+            document.getElementById('initial-amount').value = globalData.accounts[currentTab]?.initial || 0;
+            document.getElementById('modal-invest').style.display = 'flex';
+        }
+
+        async function saveInvest() {
+            await apiCall('update_account', {
+                account: currentTab,
+                initial: document.getElementById('initial-amount').value
+            }, document.getElementById('pwd-invest').value);
+            document.getElementById('modal-invest').style.display = 'none';
+        }
+
+        async function apiCall(action, payload, password) {
             const res = await fetch('/api/portfolio', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    symbol: inpSymbol.value.toUpperCase(),
-                    quantity: inpQty.value,
-                    pru: inpPru.value,
-                    password: inpPwd.value
-                })
+                body: JSON.stringify({ action, payload, password })
             });
-            if(res.ok) { closeModal(); load(); } else alert("Erreur");
-        }
-        
-        async function deleteStock() {
-            if(!confirm("Supprimer ?")) return;
-            const res = await fetch('/api/portfolio', {
-                method: 'DELETE',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ symbol: inpSymbol.value, password: inpPwd.value })
-            });
-            if(res.ok) { closeModal(); load(); }
+            if(res.ok) { closeModal(); load(); } else alert("Erreur (Mot de passe ?)");
         }
 
         load();
+        setInterval(load, 60000);
     </script>
 </body>
 </html>
