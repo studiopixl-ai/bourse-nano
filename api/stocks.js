@@ -19,53 +19,73 @@ export default async function handler(req, res) {
 
     await Promise.all(uniqueSymbols.map(async (symbol) => {
       try {
-        // On demande 1 AN d'historique pour calculer les perfs
-        const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1y`, {
+        // On demande 2 ans pour être large et avoir le YTD même en janvier
+        const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2y`, {
           headers: { "User-Agent": "Mozilla/5.0" }
         });
         if (!response.ok) throw new Error("Fetch failed");
         const json = await response.json();
         const result = json.chart.result[0];
         const meta = result.meta;
+        // Filtrer les nulls (jours fériés sans data)
         const quotes = result.indicators.quote[0].close;
         const timestamps = result.timestamp;
-
-        const price = meta.regularMarketPrice;
-        const prevClose = meta.chartPreviousClose;
-        const dayChange = ((price - prevClose) / prevClose) * 100;
         
-        // Calcul des variations historiques (en trouvant l'index correct)
-        const getVariation = (daysAgo) => {
-          if (quotes.length < daysAgo) return 0;
-          const oldPrice = quotes[quotes.length - 1 - daysAgo];
-          if (!oldPrice) return 0;
-          return ((price - oldPrice) / oldPrice) * 100;
+        // On nettoie les données (parfois Yahoo a des trous)
+        const cleanHistory = [];
+        for(let i=0; i<quotes.length; i++) {
+            if(quotes[i] !== null && quotes[i] !== undefined) {
+                cleanHistory.push({ date: new Date(timestamps[i]*1000), price: quotes[i] });
+            }
+        }
+        
+        const currentPrice = meta.regularMarketPrice;
+        const prevClose = meta.chartPreviousClose;
+        const dayChange = ((currentPrice - prevClose) / prevClose) * 100;
+
+        // Fonction helper variation
+        const getPerf = (daysBack) => {
+            if (cleanHistory.length <= daysBack) return 0;
+            // On prend le prix à l'index (Fin - 1 - Jours)
+            const refPrice = cleanHistory[cleanHistory.length - 1 - daysBack].price;
+            return ((currentPrice - refPrice) / refPrice) * 100;
         };
 
-        // Calcul YTD (1er Janvier)
+        // Calcul YTD Précis (Premier jour coté de l'année en cours)
         let ytdChange = 0;
         const currentYear = new Date().getFullYear();
-        // On cherche le premier index de l'année
-        const startOfYearIndex = timestamps.findIndex(ts => new Date(ts * 1000).getFullYear() === currentYear);
-        if (startOfYearIndex !== -1 && quotes[startOfYearIndex]) {
-           ytdChange = ((price - quotes[startOfYearIndex]) / quotes[startOfYearIndex]) * 100;
+        const firstQuoteOfYear = cleanHistory.find(h => h.date.getFullYear() === currentYear);
+        if (firstQuoteOfYear) {
+            // Variation par rapport à la CLÔTURE de l'année d'avant (ou ouverture premier jour)
+            // Convention standard YTD : (Prix Actuel - Clôture Dernier jour année N-1) / Clôture N-1
+            // Si on ne l'a pas, on prend l'ouverture du premier jour.
+            
+            // On cherche le dernier jour de l'année d'avant
+            const lastYearIndex = cleanHistory.findIndex(h => h.date.getFullYear() === currentYear) - 1;
+            let refPriceYtd = firstQuoteOfYear.price; // Fallback
+            
+            if (lastYearIndex >= 0) {
+                refPriceYtd = cleanHistory[lastYearIndex].price;
+            }
+            ytdChange = ((currentPrice - refPriceYtd) / refPriceYtd) * 100;
         }
 
-        let priceInEur = price;
-        if (meta.currency === 'USD') priceInEur = price / eurUsdRate;
+        let priceInEur = currentPrice;
+        if (meta.currency === 'USD') priceInEur = currentPrice / eurUsdRate;
 
         pricesMap[symbol] = {
           name: meta.shortName || meta.symbol,
-          price: price,
+          price: currentPrice,
           priceInEur: priceInEur,
-          change: dayChange, // Jour
-          perf1w: getVariation(5),  // 1 Semaine (~5 jours de bourse)
-          perf1m: getVariation(21), // 1 Mois (~21 jours de bourse)
-          perf1y: getVariation(250),// 1 An (~250 jours de bourse)
-          perfYtd: ytdChange,       // Depuis le 1er Janvier
+          change: dayChange,
+          // Jours de Bourse (Trading Days) :
+          perf1w: getPerf(5),   // 5 séances = 1 semaine
+          perf1m: getPerf(20),  // 20 séances = 1 mois
+          perf1y: getPerf(250), // 250 séances = 1 an
+          perfYtd: ytdChange,
           currency: meta.currency,
-          // Pour le sparkline, on garde les 30 derniers jours pour que ce soit lisible
-          history: quotes.slice(-30).filter(q => q !== null)
+          // Pour le sparkline (30 derniers points)
+          history: cleanHistory.slice(-30).map(h => h.price)
         };
       } catch (e) {
         pricesMap[symbol] = { error: true };
