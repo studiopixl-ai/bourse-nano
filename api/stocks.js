@@ -4,8 +4,12 @@ export default async function handler(req, res) {
   try {
     const promises = symbols.map(async (symbol) => {
       try {
-        // On utilise l'endpoint 'quote' qui donne le % par rapport à la clôture veille
-        const response = await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`);
+        const response = await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          }
+        });
+        
         if (!response.ok) throw new Error("Fetch failed");
         
         const json = await response.json();
@@ -15,7 +19,7 @@ export default async function handler(req, res) {
           symbol: symbol,
           name: result.shortName || result.longName || symbol,
           price: result.regularMarketPrice,
-          change: result.regularMarketChangePercent, // C'est le % "Day Change" officiel
+          change: result.regularMarketChangePercent,
           currency: result.currency
         };
       } catch (err) {
