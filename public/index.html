@@ -192,9 +192,16 @@
                 if (s.url) {
                     linkHtml = `<a href="${s.url}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none; font-size:0.8rem; margin-left:4px;">↗️</a>`;
                 } else {
-                    // Lien recherche par défaut si pas d'URL
                     const cleanSym = s.symbol.replace('.PA','');
                     linkHtml = `<a href="https://www.boursorama.com/recherche/text/${cleanSym}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none; font-size:0.8rem; margin-left:4px;">↗️</a>`;
+                }
+
+                // Badge Délai
+                let delayBadge = '';
+                if (s.delay && s.delay > 0) {
+                    delayBadge = `<span style="font-size:0.6rem; color:#d29922; border:1px solid #d29922; padding:1px 3px; border-radius:3px; margin-left:5px; vertical-align:middle;">-${s.delay}m</span>`;
+                } else {
+                    delayBadge = `<span style="font-size:0.6rem; color:#3fb950; border:1px solid #3fb950; padding:1px 3px; border-radius:3px; margin-left:5px; vertical-align:middle;">Live</span>`;
                 }
 
                 const html = `
@@ -203,6 +210,7 @@
                             <span class="symbol">
                                 ${s.symbol.replace('.PA','')}
                                 ${linkHtml}
+                                ${delayBadge}
                             </span>
                             <span class="name">${s.name.substring(0,12)}..</span>
                             <span class="details">${s.quantity} x ${s.pru.toFixed(3)} €</span>

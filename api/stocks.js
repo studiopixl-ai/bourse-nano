@@ -78,6 +78,7 @@ export default async function handler(req, res) {
           price: currentPrice,
           priceInEur: priceInEur,
           change: dayChange,
+          delay: meta.exchangeDataDelayedBy || 0, // Ajout du délai (en minutes)
           perf1w: getPerf(5),
           perf1m: getPerf(20),
           perf1y: getPerf(250),
