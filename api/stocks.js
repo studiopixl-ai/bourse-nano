@@ -1,14 +1,25 @@
-export default async function handler(req, res) {
-  const symbols = ['OCS', 'MEDCL.PA', 'ALCOX.PA', 'ALCJ.PA'];
+import { Redis } from '@upstash/redis';
 
+const redis = Redis.fromEnv();
+
+export default async function handler(req, res) {
   try {
-    // RETOUR À LA VERSION CHART (V8) QUI PASSAIT LE FIREWALL
-    const promises = symbols.map(async (symbol) => {
+    // 1. Récupérer la liste depuis Redis
+    const portfolio = await redis.get('nano_portfolio');
+    
+    // Si vide ou pas encore créé, on met une liste par défaut pour commencer
+    const symbolsData = portfolio || [
+      { symbol: 'OCS', quantity: 0 },
+      { symbol: 'MEDCL.PA', quantity: 0 },
+      { symbol: 'ALCOX.PA', quantity: 0 },
+      { symbol: 'ALCJ.PA', quantity: 0 }
+    ];
+
+    // 2. Chercher les prix
+    const promises = symbolsData.map(async (item) => {
       try {
-        const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`, {
-          headers: {
-            "User-Agent": "Mozilla/5.0" // On garde le user-agent au cas où
-          }
+        const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${item.symbol}?interval=1d&range=5d`, {
+          headers: { "User-Agent": "Mozilla/5.0" }
         });
         
         if (!response.ok) throw new Error("Fetch failed");
@@ -17,24 +28,22 @@ export default async function handler(req, res) {
         const result = json.chart.result[0];
         const meta = result.meta;
         
-        // CALCUL PRÉCIS (Day Change)
-        // regularMarketPrice = Prix actuel
-        // chartPreviousClose = Clôture de la veille (C'est ça qu'on veut !)
-        
         const price = meta.regularMarketPrice;
         const prevClose = meta.chartPreviousClose;
         const change = ((price - prevClose) / prevClose) * 100;
 
         return {
-          symbol: symbol,
+          symbol: item.symbol,
+          quantity: item.quantity,
           name: meta.shortName || meta.symbol,
           price: price,
-          change: change, // Le vrai % jour
-          currency: meta.currency
+          change: change,
+          currency: meta.currency,
+          value: price * item.quantity // Valorisation
         };
       } catch (err) {
-        console.error(`Error fetching ${symbol}:`, err);
-        return { symbol, error: "Indisponible" };
+        console.error(`Error fetching ${item.symbol}:`, err);
+        return { symbol: item.symbol, error: "Indisponible", quantity: item.quantity };
       }
     });
 

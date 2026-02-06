@@ -2,10 +2,12 @@
   "version": 2,
   "builds": [
     { "src": "api/stocks.js", "use": "@vercel/node" },
+    { "src": "api/portfolio.js", "use": "@vercel/node" },
     { "src": "public/index.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/stocks", "dest": "/api/stocks.js" },
+    { "src": "/api/portfolio", "dest": "/api/portfolio.js" },
     { "src": "/", "dest": "/public/index.html" }
   ]
 }

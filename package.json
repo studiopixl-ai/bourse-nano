@@ -1,7 +1,7 @@
 {
   "name": "bourse-nano",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "dependencies": {
-    "yahoo-finance2": "^2.11.3"
+    "@upstash/redis": "^1.28.0"
   }
 }
