@@ -5,19 +5,18 @@ export default async function handler(req, res) {
   try {
     const portfolio = await redis.get('nano_portfolio') || [];
 
-    // Récupérer le taux de change EURUSD en temps réel
-    let eurUsdRate = 1.04; // Fallback
+    // Forex
+    let eurUsdRate = 1.04;
     try {
-      const forexRes = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/EURUSD=X?interval=1d&range=1d", {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      });
+      const forexRes = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/EURUSD=X?interval=1d&range=1d", { headers: { "User-Agent": "Mozilla/5.0" } });
       const forexJson = await forexRes.json();
       eurUsdRate = forexJson.chart.result[0].meta.regularMarketPrice;
-    } catch (e) { console.error("Forex error", e); }
+    } catch (e) {}
 
     const promises = portfolio.map(async (item) => {
       try {
-        const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${item.symbol}?interval=1d&range=5d`, {
+        // On demande 30 jours pour avoir un beau mini-graphe
+        const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${item.symbol}?interval=1d&range=1mo`, {
           headers: { "User-Agent": "Mozilla/5.0" }
         });
         
@@ -26,28 +25,20 @@ export default async function handler(req, res) {
         const json = await response.json();
         const result = json.chart.result[0];
         const meta = result.meta;
+        const quotes = result.indicators.quote[0].close; // Historique des prix
         
         const price = meta.regularMarketPrice;
         const prevClose = meta.chartPreviousClose;
         const change = ((price - prevClose) / prevClose) * 100;
 
-        // Gestion Devise
         let priceInEur = price;
-        const isUsd = meta.currency === 'USD';
-        
-        if (isUsd) {
-          // Si le titre est en USD (ex: OCS), on le convertit en EUR pour le calcul de gain
-          // Prix ($) / Taux (EURUSD) = Prix (€)
-          priceInEur = price / eurUsdRate; 
-        }
+        if (meta.currency === 'USD') priceInEur = price / eurUsdRate;
 
-        // Calculs Financiers (Tout en EUR)
         const totalValue = priceInEur * item.quantity;
         let gain = 0;
         let gainPercent = 0;
 
         if (item.pru > 0) {
-          // Gain = (Prix Actuel € - PRU €) * Quantité
           gain = (priceInEur - item.pru) * item.quantity;
           gainPercent = ((priceInEur - item.pru) / item.pru) * 100;
         }
@@ -57,13 +48,13 @@ export default async function handler(req, res) {
           quantity: item.quantity,
           pru: item.pru,
           name: meta.shortName || meta.symbol,
-          price: price, // On garde le prix original pour l'affichage
-          priceInEur: priceInEur,
+          price: price,
           dayChange: change,
           currency: meta.currency,
           totalValue: totalValue,
           gain: gain,
-          gainPercent: gainPercent
+          gainPercent: gainPercent,
+          history: quotes.filter(q => q !== null) // On renvoie l'historique nettoyé
         };
       } catch (err) {
         return { symbol: item.symbol, error: "Indisponible", quantity: item.quantity };
