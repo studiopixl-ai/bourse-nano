@@ -73,12 +73,16 @@ export default async function handler(req, res) {
         let priceInEur = currentPrice;
         if (meta.currency === 'USD') priceInEur = currentPrice / eurUsdRate;
 
+        // Forcer le délai pour Paris (.PA) car Yahoo renvoie parfois 0 à tort
+        let delay = meta.exchangeDataDelayedBy || 0;
+        if (symbol.endsWith('.PA') && delay === 0) delay = 15;
+
         pricesMap[symbol] = {
           name: meta.shortName || meta.symbol,
           price: currentPrice,
           priceInEur: priceInEur,
           change: dayChange,
-          delay: meta.exchangeDataDelayedBy || 0, // Ajout du délai (en minutes)
+          delay: delay,
           perf1w: getPerf(5),
           perf1m: getPerf(20),
           perf1y: getPerf(250),
